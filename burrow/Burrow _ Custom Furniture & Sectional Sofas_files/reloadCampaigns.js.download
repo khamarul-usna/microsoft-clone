@@ -1,0 +1,72 @@
+//<script>
+bouncex.tryCatch(function reloadCampaigns(){
+	var newCampaigns = false;
+	bouncex.creatives = false;
+	bouncex.brandStyles = false;
+	bouncex.webfonts = false;
+
+	if (bouncex.gbi) {
+		bouncex.gbi.stacks = false;
+	}
+
+	var newCookie = {"v":{"logged_in":false,"ever_logged_in":false,"cart":false,"submitted_onsite":false,"logged_in_identified":false,"url_coupon_code":"living-room\/seating","podcast_coupon_code":false},"dgFirstLoad":true,"hardID":"2CCKlA92NdFtZKm72QQCS9PeSRh","softID":"2CCKlBkVyO6xAN4G10c1Cf3HHPG","dg":{"isPreviousCustomer":false,"isSubscriber":false},"fvt":1658301275,"vid":1658576365615447,"ao":5,"lp":"https%3A%2F%2Fburrow.com%2F","as":0,"vpv":4,"d":"d","r":"www.google.com","cvt":1658576365,"sid":10,"gcr":47,"m":0,"did":"6913963208789979995","lvt":1658577695,"campaigns":{"1057321":{"lvt":1658576367,"lavid":1},"1148032":{"lvt":1658410185,"lavid":1,"la":1658410184,"fsa":1658410184,"as":1,"ao":1,"oa":[1658410184],"io":1,"wc":1658410186},"1148044":{"lvt":1658325796,"as":1,"lavid":1,"la":1658325796,"fsa":1658325796,"ao":1,"oa":[1658325796],"io":1,"wc":1658325798},"1149652":{"lvt":1658560725,"as":1,"lavid":1,"la":1658560725,"fsa":1658301342,"ao":2,"oa":[1658301342,1658560725],"io":1,"wc":1658560731},"1149658":{"lvt":1658325792,"lavid":1,"la":1658325790,"fsa":1658325790,"as":1,"ao":1,"oa":[1658325790],"io":1,"wc":1658325794}},"rcs_google.":1};
+	var campaignAdded = false;
+	for (var campaignId in newCampaigns) {
+		if (newCampaigns.hasOwnProperty(campaignId)) {
+			// if campaign cookie does not exist
+			if (!bouncex.cookie.campaigns) {
+				bouncex.cookie.campaigns = {};
+			} else {
+				bouncex.cookie.campaigns = Object.assign({}, bouncex.cookie.campaigns);
+			}
+
+			if (!bouncex.cookie.campaigns[campaignId]) {
+				campaignAdded = true;
+				bouncex.cookie.campaigns[campaignId] = {lvt:bouncex.cookie.lvt, vv:0};
+			} else if (newCookie.campaigns[campaignId]) {
+				// need to set campaign cookie's activations_sessions to the new cookie as it gets modified in reloadCampaigns
+				campaignAdded = true;
+				bouncex.cookie.campaigns[campaignId].as = newCookie.campaigns[campaignId].as;
+			}
+		}
+	}
+	if (campaignAdded) {
+		bouncex.setBounceCookie();
+	}
+
+	for (var campaignId in bouncex.campaigns) {
+		if (bouncex.campaigns.hasOwnProperty(campaignId)) { //copy state vars
+			if (newCampaigns[campaignId]) {
+				newCampaigns[campaignId].ap = bouncex.campaigns[campaignId].ap;
+				newCampaigns[campaignId].repressed = Boolean(bouncex.campaigns[campaignId].repressed);
+			}
+
+			if (newCampaigns[campaignId] &&
+				bouncex.campaigns[campaignId].ad_visible &&
+				newCampaigns[campaignId].html.replace(/fsa=(\d+)&|width=(\d+)&|height=(\d+)&/gi,'') == bouncex.campaigns[campaignId].html.replace(/fsa=(\d+)&|width=(\d+)&|height=(\d+)&/gi,'')) {
+								newCampaigns[campaignId] = bouncex.campaigns[campaignId];
+			} else if (newCampaigns[campaignId] && bouncex.isGbi2Campaign(campaignId) && bouncex.campaigns[campaignId].gbi.hasBegunAuction) {
+								newCampaigns[campaignId] = bouncex.campaigns[campaignId];
+			} else {
+				bouncex.destroy_ad(campaignId);
+			}
+		}
+	}
+
+	bouncex.campaigns = newCampaigns;
+	newCampaigns = {};
+
+	bouncex.debug = false;
+		bouncex.setBounceCookie();
+	if (bouncex.campaigns) {
+		for (var campaignId in bouncex.campaigns) {
+			if (bouncex.campaigns[campaignId].ad_visible && typeof bouncex.repressCampaigns === 'function') {
+				bouncex.repressCampaigns(campaignId);
+			}
+		}
+		bouncex.loadBounceCss(bouncex.initActivationFuncs);
+	}
+		bouncex.loadBrandStyles();
+	bouncex.loadWebfonts();
+
+	})();

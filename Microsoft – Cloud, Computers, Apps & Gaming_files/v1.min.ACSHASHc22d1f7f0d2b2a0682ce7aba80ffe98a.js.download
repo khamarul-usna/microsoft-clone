@@ -1,0 +1,235 @@
+window.ExpConsentUtils = window.ExpConsentUtils || {};
+
+window.ExpConsentUtils = (function () {
+
+    /*Function to try to find a specific object */
+    function waitForObj(objectName) {
+        var waitTime = 500;
+        var maxRetryCt = 10;
+        return new Promise(function (resolve, reject) {
+            var retryCt = 0;
+            var intervalHandle = setInterval(function () {
+                // Trying to find the specified object
+                if (retryCt < maxRetryCt) {
+                    if ((objectName == "visitor" && typeof visitor === 'object' && visitor) ||
+                        (objectName == "wcpconsent" && typeof WcpConsent !== 'undefined' && WcpConsent && typeof WcpConsent.siteConsent !== 'undefined' && WcpConsent.siteConsent)) {
+                        clearInterval(intervalHandle);
+                        resolve();
+                    }
+                    else {
+                        retryCt++;
+                    }
+                } else {
+                    // Giving up trying to find the specified object
+                    clearInterval(intervalHandle);
+                    reject();
+                }
+            }, waitTime);
+        });
+    }
+
+    return { waitForObj: waitForObj }
+}());
+
+var ExpConsentHandler = (function () {
+    var VISITOR_OBJECT = "visitor";
+    var WCPCONSENT_OBJECT = "wcpconsent";
+    
+    /* Function to synchronize Adobe Target Id with Marketing Cloud Visitor Id and MSFT Ids upon user consent */
+    function syncTargetProfileWithMCID() {
+        window.ExpConsentUtils.waitForObj(VISITOR_OBJECT).then(function () {
+            /* Callback function  to ensure that Target trackEvent call happens after the visitorAPI makes all necessary network calls */
+            visitor.getVisitorValues(function (vals) {
+                adobe.target.trackEvent({ 'mbox': 'personalizationConsent' });
+            });
+        }).catch(function (err) {
+            // visitor object not found
+            console.log(err);
+        });
+    }
+
+    /* Function to check if user consent is required */
+    function isConsentRequired() {
+        if (WcpConsent && WcpConsent.siteConsent && WcpConsent.siteConsent.isConsentRequired !== undefined && WcpConsent.siteConsent.isConsentRequired !== null) {
+            return WcpConsent.siteConsent.isConsentRequired;
+        }
+        // Defaulting to true to avoid adding scripts without user's consent
+        return true;
+    }
+
+    /* Function to check if user has granted consent */
+    function isConsentGranted(userConsent) {
+        return userConsent && userConsent.Advertising && userConsent.Analytics && userConsent.SocialMedia;
+    }
+
+    /* Function to get user's consent */
+    function getUserConsent() {
+        if (WcpConsent && WcpConsent.siteConsent) {
+            return WcpConsent.siteConsent.getConsent();
+        }
+        return undefined;
+    }
+
+    /* Function to check if user has consented */
+    function checkUserConsent() {
+        var userConsent = getUserConsent();
+        return isConsentGranted(userConsent);
+    }
+
+    /* Function to delete a specific cookie */
+    function deleteCookie(cookieName) {
+        document.cookie = cookieName + '=;max-age=-1;path=/;domain=.microsoft.com;';
+    }
+
+    /* Function to update epiration time of a specific cookie */
+    function updateCookieExpTime(cookieName, expTime) {
+        var cookieValue = getCookie(cookieName);
+        var date = new Date();
+        date.setTime(date.getTime() + expTime);
+        var expires = "expires=" + date.toUTCString();
+        document.cookie = cookieName + "=" + cookieValue + "; " + expires + "; path=/;domain=.microsoft.com;";
+    }
+
+    /* Function to get the value of a specific cookie*/
+    function getCookie(cookieName) {
+        var name = cookieName + "=";
+        var decodedCookieVal = decodeURIComponent(document.cookie);
+        var cookieArray = decodedCookieVal.split('; ');
+        var res;
+        cookieArray.forEach(val => {
+            if (val.indexOf(name) === 0) res = val.substring(name.length);
+        });
+        return res;
+    }
+
+    /* Function to delete all non-essential cookies */
+    function deleteCookies(nonEssentialCookies) {
+        for (var i = 0; i < nonEssentialCookies.length; i++) {
+            var cookieName = nonEssentialCookies[i];
+            deleteCookie(cookieName);
+        }
+    }
+
+    /* Callback function to handle experimentation scripts and cookies when Experimentation without Personalization is enabled. */
+    function consentChangeCallBack() {
+        // Checking if we need to delete cookies and VisitorAPI
+        if (!checkUserConsent()) {
+            // Deleting cookies and visitor API
+            var nonEssentialCookies = [
+                'AMCV_EA76ADE95776D2EC7F000101%40AdobeOrg',
+                'AMCVS_EA76ADE95776D2EC7F000101%40AdobeOrg'
+            ];
+            deleteCookies(nonEssentialCookies);
+            deleteVisitorScripts();
+            //updating cookie expiration time to 30 days when user does not provide/revokes consent to personalization
+            updateCookieExpTime('mbox', 2592000000);
+        } else {
+            insertVisitorScripts();
+            //updating cookie expiration time to default time 13 months when user provides consent to personalization
+            updateCookieExpTime('mbox', 34186698000);
+            syncTargetProfileWithMCID();
+        }
+    }
+
+    /* Callback function to handle experimentation cookies when Experimentation without Personalization is disabled. */
+    function consentChangeCallBackWithoutPersonalization() {
+        if (!checkUserConsent()) {
+            // Deleting cookies
+            var nonEssentialCookies = [
+                'mbox',
+                'AMCV_EA76ADE95776D2EC7F000101%40AdobeOrg',
+                'AMCVS_EA76ADE95776D2EC7F000101%40AdobeOrg'
+            ];
+            deleteCookies(nonEssentialCookies);
+        }
+    }
+
+    function handleExpScripts() {
+        window.ExpConsentUtils.waitForObj(WCPCONSENT_OBJECT).then(function () {
+            var isExpWithoutPersonalizationEnabled = window.cas.exp.target.isExpWithoutPersonalizationEnabled;
+            // WcpConsent object found
+            if (isConsentRequired()) {
+                // Registering callback function to handle scripts and cookies based on Experimentation without Personalization feature is enabled.
+                if (isExpWithoutPersonalizationEnabled) {
+                    WcpConsent.onConsentChanged(consentChangeCallBack);
+                }
+                else {
+                    WcpConsent.onConsentChanged(consentChangeCallBackWithoutPersonalization);
+                }
+            }
+            /* Includes visitor scripts when consent is not required or when user provides consent. */
+            if (!isConsentRequired() || (isConsentRequired() && checkUserConsent())) {
+                insertVisitorScripts();
+            }
+            /* Includes at.js scripts when
+             1. Experimentation without Personalization is enabled.
+             2. Consent is not required
+             3. Consent is required and user has granted consent */
+            if (isExpWithoutPersonalizationEnabled || !isConsentRequired() || (isConsentRequired() && checkUserConsent())) {
+                insertATScripts();
+            }
+            /* Fire target notification call to sync tntId with MID when user provides consent for personalization */
+            if (isExpWithoutPersonalizationEnabled && isConsentRequired() && checkUserConsent()) {
+                syncTargetProfileWithMCID();
+            }
+        }).catch(function (err) {
+            // WcpObject not found
+            console.log(err);
+        });
+    }
+
+    /* Function to delete VisitorAPI script from the page when user revokes consent for personalization */
+    function deleteVisitorScripts() {
+        var visitorScript = document.getElementById("visitor-script");
+        if (visitorScript) {
+            visitorScript.remove();
+        }
+    }
+
+    /* Function to append VisitorAPI before its respective meta script anchors. */
+    function insertVisitorScripts() {
+        var VISITOR_ANCHOR_TAG_NAME = 'exp-visitor-anchor';
+        var VISITOR_SCRIPT_SRC = '/etc.clientlibs/microsoft/components/structure/page/clientlibs/visitor.ACSHASH' + window.cas.exp.target.visitorJsHash + '.min.js';
+
+        var head = document.head || document.getElementByTagName('head')[0];
+
+        var visitorScript = document.createElement('script');
+        visitorScript.type = "text/javascript";
+        visitorScript.src = VISITOR_SCRIPT_SRC;
+        visitorScript.id = "visitor-script";
+        var visitorScriptAnchor = document.getElementsByName(VISITOR_ANCHOR_TAG_NAME)[0];
+        head.insertBefore(visitorScript, visitorScriptAnchor);
+    }
+
+
+    /* Function to append Experimentation scripts before its respective meta script anchors. */
+    function insertATScripts() {
+        var ATJS_ANCHOR_TAG_NAME = 'exp-atjs-anchor';
+        var ATJS_SCRIPT_SRC = '/etc.clientlibs/microsoft/components/structure/page/clientlibs/experimentation.ACSHASH' + window.cas.exp.target.expJsHash + '.min.js';
+
+        var head = document.head || document.getElementByTagName('head')[0];
+
+        var atjsScript = document.createElement('script');
+        atjsScript.type = "text/javascript";
+        atjsScript.src = ATJS_SCRIPT_SRC;
+        var atjsScriptAnchor = document.getElementsByName(ATJS_ANCHOR_TAG_NAME)[0];
+        head.insertBefore(atjsScript, atjsScriptAnchor);
+    }
+
+    if (typeof exports === 'object') {
+        module.exports = { consentChangeCallBack, handleExpScripts, isConsentRequired, checkUserConsent, syncTargetProfileWithMCID, consentChangeCallBackWithoutPersonalization };
+    }
+
+    return {
+        handleExpScripts: handleExpScripts,
+        isConsentRequired: isConsentRequired,
+        checkUserConsent: checkUserConsent
+    }
+})();
+
+if (document.readyState === "complete" || document.readyState === "interactive") {
+    ExpConsentHandler.handleExpScripts();
+}
+else {
+    document.addEventListener("DOMContentLoaded", ExpConsentHandler.handleExpScripts, false);
+}

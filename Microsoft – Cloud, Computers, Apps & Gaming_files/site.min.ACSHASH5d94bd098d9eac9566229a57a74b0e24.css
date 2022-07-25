@@ -1,0 +1,5 @@
+.highlight .card-body h1,.highlight .card-body .h1{font-size:1.8125rem;margin-bottom:1rem}
+.highlight .card-body h4,.highlight .card-body .h4{font-size:1.1875rem;margin-bottom:.5rem;font-weight:600}
+@media(min-width:1084px){.highlight .card-body h1,.highlight .card-body .h1{font-size:2.3125rem;margin-bottom:1.25rem}
+.highlight .card-body h4,.highlight .card-body .h4{font-size:1.3125rem;margin-bottom:.5rem}
+}

@@ -1,0 +1,105 @@
+var experimentationAnalytics = (function () {
+
+    function isEmpty(val) {
+        return (val && val.length > 0) ? false : true;
+    }
+
+    function key(obj) {
+        return Object.keys(obj).map(function (k) {
+            return k + '' + obj[k];
+        }).join('');
+    }
+
+    function distinct(arr) {
+        var result = arr.reduce(function (acc, e) {
+            acc[key(e)] = e;
+            return acc;
+        }, {});
+        return Object.keys(result).map(function (k) {
+            return result[k];
+        });
+    }
+
+    // To send Adobe Target analytics payload to vortex server to ingest the experimentation data in Adobe Analytics.
+    function sendToVortex(tnt_response) {
+        console.log('sendToVortex Call');
+        if (tnt_response && tnt_response.analytics) {
+            check1DS(tnt_response);
+        }
+    }
+
+    function getAtResponsePayload(tnt_response) {
+        return {
+            actionType: 'A',
+            behavior: '12',
+            content: JSON.stringify({}),
+            pageTags: {
+                tnta: (tnt_response && tnt_response.analytics ? tnt_response.analytics.tnta : ''), // a4t data payload
+            }
+        }
+    }
+
+    function getActivityPayload(tnt_response, activityIndex) {
+        return {
+            actionType: 'A',
+            behavior: '12',
+            content: JSON.stringify({}),
+            pageTags: {
+                tnta: '',
+                at_activity_name: (tnt_response && tnt_response.responseTokens[activityIndex] ? tnt_response.responseTokens[activityIndex]['activity.name'] : ''), // friendly name target activity
+                at_exp_name: (tnt_response && tnt_response.responseTokens[activityIndex] ? tnt_response.responseTokens[activityIndex]['experience.name'] : ''), // friendly name target experience
+                at_activity_id: (tnt_response && tnt_response.responseTokens[activityIndex] ? tnt_response.responseTokens[activityIndex]['activity.id'] : ''),
+                at_exp_id: (tnt_response && tnt_response.responseTokens[activityIndex] ? tnt_response.responseTokens[activityIndex]['experience.id'] : '')
+            }
+        }
+    }
+
+    function check1DS(tnt_response, retryCount, timeout) {
+        var DEFAULT_RETRY_COUNT = 25;
+        var DEFAULT_TIMEOUT = 200;
+        var maxRetryCt = typeof retryCount === 'number' ? retryCount : DEFAULT_RETRY_COUNT;
+        var retryTimeout = typeof timeout === 'number' ? timeout : DEFAULT_TIMEOUT
+        var currentRetryCt = 0;
+        if (window.expAnalytics && window.expAnalytics.isInitialized()) {
+            window.expAnalytics.experimentionContentUpdate(getAtResponsePayload(tnt_response));
+            if (!isEmpty(tnt_response.responseTokens)) {
+                var tt_activityCount = tnt_response.responseTokens.length;
+                for (var i = 0; i < tt_activityCount; i++) {
+                    window.expAnalytics.experimentionContentUpdate(getActivityPayload(tnt_response, i));
+                }
+
+                // ttMETA object set for ContentSquare pickup
+                window.ttMETA = typeof (window.ttMETA) != 'undefined' ? window.ttMETA : [];
+                if (isEmpty(tnt_response.responseTokens)) {
+                    return;
+                }
+                var uniqueTokens = distinct(tnt_response.responseTokens);
+                uniqueTokens.forEach(function (token) {
+                    window.ttMETA.push({
+                        'CampaignName': token['activity.name'],
+                        'CampaignId': token['activity.id'],
+                        'RecipeName': token['experience.name'],
+                        'RecipeId': token['experience.id'],
+                        'OfferId': token['option.id'],
+                        'OfferName': token['option.name']
+                    });
+                });
+            }
+        } else {
+            if (currentRetryCt < maxRetryCt) {
+                currentRetryCt++;
+                setTimeout(function () {
+                    check1DS(tnt_response)
+                }, retryTimeout);
+            }
+        }
+    }
+
+    if (typeof exports === 'object') {
+        module.exports = { getActivityPayload, getAtResponsePayload, check1DS, sendToVortex };
+    }
+
+    return {
+        log: sendToVortex
+    };
+})();

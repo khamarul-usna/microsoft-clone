@@ -1,0 +1,301 @@
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: white;
+    color: black;
+    font-size: 15px;
+    line-height: 1.5;
+}
+a {
+    color: #262626;
+    text-decoration: none;
+
+}
+ul{
+    list-style: none;
+}
+.container{
+    width:100%;
+    max-width: 1102;
+    margin: auto;
+    
+}
+.main-nav{
+    display: flex;
+    align-items: center;
+    height: 60px;
+    padding:30px;
+    padding-left: 80px;
+    padding-right: 80px;
+    font-size: 13px; 
+    justify-content: space-between;
+
+
+}
+.main-nav .logo{
+    width: 110px;
+    
+    
+}
+.main-nav ul{
+
+    display: flex;
+}
+.main-nav ul li{
+    padding: 10px;
+}
+.main-nav ul li a{
+    padding: 2px;
+}
+.main-nav ul li a:hover{
+    border-bottom: 2px solid black;
+}
+
+.main-nav ul.main-menu{
+    flex: 1;
+    margin-left: 20px;
+}
+.button{
+    background-color:#0067b8;
+    color: white;
+    padding: 12px;
+    border: 0.125rem solid transparent;
+    font-weight: 600;
+    font-size: .9rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.btn{
+    color: blue;
+}
+.button:hover{
+    opacity: 0.7;
+}
+
+.showcase{
+    width: 100%;
+    height: 500px;
+    background: url('Highlight-Hero-M365-Screenplates-Update-Excel_VP4-1399x600.jpg')
+no-repeat center center/cover;
+margin: 0;
+padding-top: 170px;
+padding-left: 115px;
+
+}
+header.showcase h1{
+    
+    margin-bottom: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 37px;
+}
+header.showcase p{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ margin-bottom: 2rem;
+ color: #262626;
+}
+header.showcase a{
+    position: relative;
+    padding: 20px;
+}
+section{
+    margin-top: 90px;
+    margin-left: 300px;
+    position: relative;
+    margin-right:300px
+    
+}
+div.bottom a{
+    color:  #0067b8;
+    text-decoration: underline;
+display: block;
+font-weight: 600;
+
+}
+.home-bottom{
+    display: flex;
+    padding-left: 20px;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+ section div img.img2{
+    position: relative;
+   padding-left: 50px;
+   
+    
+}
+.home-card {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    padding: 50px;
+    
+
+
+    width: 100%;
+    margin: 0;
+    margin-bottom:60px
+}
+
+.home-card button{
+    
+    padding: 8px;
+    background-color:#ffb900;
+    border-color:  transparent;
+    font-weight: 600;
+}
+.home-card h1{
+    font-family: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom:20px;
+    margin-top:px
+}
+.home-card p{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+margin-bottom: 20px;
+}
+.padding-change{
+    padding-top: 35px;
+}
+.home-card a{
+    color: #0067b8;
+    font-weight: 600;
+    display: inline-block;
+}
+.home-card a:hover{
+    border-bottom: 1px solid #0067b8;
+}
+.Xbox{
+    background:url(gldn-MSFT-hero-Edge_VP4-1260x600.jpg );
+    width: 92%;
+    margin: 0;
+    height: 600px;
+    margin:50px;
+    margin-right:50px;
+  padding: 100px;
+  margin-bottom: 90px;
+}
+.Xbox h1{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 30px;
+    font-weight: 600;
+    
+    
+}
+.Xbox p{
+   display: block;
+
+}
+.download1{
+    background-color: white;
+    
+    width: 350px;
+    padding:40px
+    
+}
+.download1 button{
+    background-color: white;
+    
+
+}
+.Xbox button{
+    background-color: #0067b8;
+    width: 120px;
+    padding: 5px;
+    height: 40px;
+    border: transparent;
+    color: white;
+    font-weight: 600;
+}
+.Xbox button:hover{
+    opacity: .7;
+}
+div.head p{
+    font-size: 30px;
+    
+    font-family: inherit;
+    font-weight: 600;
+    
+    position: relative;
+    margin: 50px;
+
+}
+.follow{
+    display: flex;
+    align-items: center;
+   
+    margin:30px 0 30px;
+    padding-left: 50px;
+
+}
+.follow *{
+    margin-right: 10px;
+}
+.logo2{
+    width:30px
+}
+.links{
+    margin: 0;
+    background-color: #f2f2f2;
+    color: #616161;
+    font-size: 13px;
+    padding-top: 35px;
+    margin-top: 90px;
+    
+}
+.inner{
+    max-width: 1120px;
+    padding-left: 100px;
+    display: grid;
+    grid-template-columns: repeat(6,1fr);
+    
+    
+    
+}
+
+
+.links li{
+    
+    line-height: 3.0;
+}
+.links li:hover{
+    border-bottom:.5px  solid lightslategray;
+}
+.footer{
+    background-color: #f2f2f2;
+    color:#616161;
+    font-size: 12px;
+    
+
+}
+.inner-footer{
+    max-width: 1102px;
+    margin: 0 auto; 
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content:space-between;
+
+}
+.footer ul{
+    display: flex;
+    
+
+}
+.footer ul li{
+margin-right: 30px;
+
+
+}
+.footer div{
+    
+}
+
+
+
+
+
